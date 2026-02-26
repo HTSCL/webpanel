@@ -1,1 +1,1302 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WebPanel — Adonis Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:        #0a0b0d;
+    --bg2:       #111318;
+    --bg3:       #181b22;
+    --border:    #1f2330;
+    --border2:   #2a3040;
+    --accent:    #e84040;
+    --accent2:   #ff6b35;
+    --green:     #2ecc71;
+    --yellow:    #f39c12;
+    --blue:      #3498db;
+    --text:      #e2e8f0;
+    --text2:     #8892a4;
+    --text3:     #4a5568;
+    --mono:      'JetBrains Mono', monospace;
+    --sans:      'Syne', sans-serif;
+    --radius:    6px;
+    --shadow:    0 4px 24px rgba(0,0,0,.5);
+  }
 
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* ══════════════════════════════════════════
+     LOGIN SCREEN
+  ══════════════════════════════════════════ */
+  #loginScreen {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+    z-index: 1000;
+    transition: opacity .4s, visibility .4s;
+  }
+  #loginScreen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  .login-box {
+    width: 400px;
+    border: 1px solid var(--border2);
+    background: var(--bg2);
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: var(--shadow), 0 0 80px rgba(232,64,64,.05);
+    animation: slideUp .5s cubic-bezier(.16,1,.3,1);
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .login-logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .login-logo .brand {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--text);
+  }
+  .login-logo .brand span { color: var(--accent); }
+  .login-logo .sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 4px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .form-group input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .form-group input:focus { border-color: var(--accent); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 20px;
+    border: none; border-radius: var(--radius);
+    font-family: var(--sans); font-weight: 600; font-size: 14px;
+    cursor: pointer; transition: all .15s;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    width: 100%;
+    padding: 12px;
+  }
+  .btn-primary:hover { background: #c0392b; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-danger  { background: rgba(232,64,64,.15); color: var(--accent); border: 1px solid rgba(232,64,64,.3); }
+  .btn-danger:hover  { background: rgba(232,64,64,.3); }
+  .btn-success { background: rgba(46,204,113,.15); color: var(--green); border: 1px solid rgba(46,204,113,.3); }
+  .btn-success:hover { background: rgba(46,204,113,.3); }
+  .btn-info    { background: rgba(52,152,219,.15); color: var(--blue);  border: 1px solid rgba(52,152,219,.3); }
+  .btn-info:hover    { background: rgba(52,152,219,.3); }
+  .btn-warn    { background: rgba(243,156,18,.15);  color: var(--yellow); border: 1px solid rgba(243,156,18,.3); }
+  .btn-warn:hover    { background: rgba(243,156,18,.3); }
+  .btn-ghost   { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+  .btn-ghost:hover   { border-color: var(--border2); color: var(--text); background: var(--bg3); }
+
+  #loginError {
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 12px;
+    margin-top: 10px;
+    text-align: center;
+    min-height: 18px;
+  }
+
+  /* ══════════════════════════════════════════
+     APP LAYOUT
+  ══════════════════════════════════════════ */
+  #app { display: none; height: 100vh; flex-direction: column; }
+  #app.visible { display: flex; }
+
+  /* TOPBAR */
+  .topbar {
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 20px;
+    height: 52px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .topbar .brand {
+    font-size: 18px; font-weight: 800; letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .topbar .brand span { color: var(--accent); }
+  .topbar .sep { flex: 1; }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--text3);
+    transition: background .3s;
+  }
+  .status-dot.connected { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  #statusText {
+    font-family: var(--mono); font-size: 12px; color: var(--text2);
+  }
+  .user-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px 4px 8px;
+    font-size: 13px; font-family: var(--mono);
+  }
+  .user-avatar {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent); display: flex; align-items: center;
+    justify-content: center; font-size: 11px; font-weight: 700; color: #fff;
+  }
+  .logout-btn {
+    background: none; border: none; color: var(--text3);
+    cursor: pointer; font-size: 18px; line-height: 1;
+    padding: 4px 8px; border-radius: var(--radius);
+    transition: color .15s;
+  }
+  .logout-btn:hover { color: var(--accent); }
+
+  /* SIDEBAR + CONTENT */
+  .main-layout { display: flex; flex: 1; overflow: hidden; }
+
+  .sidebar {
+    width: 200px; flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 12px 8px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .sidebar-section {
+    font-family: var(--mono); font-size: 10px; color: var(--text3);
+    letter-spacing: 2px; text-transform: uppercase;
+    padding: 10px 10px 4px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13px; font-weight: 600;
+    color: var(--text2);
+    transition: all .15s;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: rgba(232,64,64,.12); color: var(--accent); }
+  .nav-item .icon { font-size: 16px; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: #fff; font-family: var(--mono);
+    font-size: 10px; font-weight: 700;
+    padding: 1px 6px; border-radius: 10px;
+    min-width: 18px; text-align: center;
+  }
+
+  .content { flex: 1; overflow-y: auto; padding: 24px; }
+
+  /* PANELS */
+  .panel { display: none; animation: fadeIn .2s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .panel-title {
+    font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+  .panel-sub { color: var(--text2); font-size: 13px; margin-bottom: 24px; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 12px; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--text2);
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  /* STAT CARDS */
+  .stat-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px;
+  }
+  .stat-label {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--text3); letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .stat-value { font-size: 32px; font-weight: 800; letter-spacing: -2px; }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.green  { color: var(--green); }
+  .stat-value.blue   { color: var(--blue); }
+  .stat-value.yellow { color: var(--yellow); }
+
+  /* PLAYER TABLE */
+  .player-table { width: 100%; border-collapse: collapse; }
+  .player-table th {
+    font-family: var(--mono); font-size: 10px; color: var(--text3);
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 8px 12px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .player-table td {
+    padding: 10px 12px;
+    font-family: var(--mono); font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .player-table tr:last-child td { border-bottom: none; }
+  .player-table tr:hover td { background: var(--bg3); }
+  .player-actions { display: flex; gap: 4px; }
+
+  /* RANK BADGE */
+  .rank-badge {
+    display: inline-block;
+    padding: 2px 8px; border-radius: 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; font-family: var(--mono);
+  }
+  .rank-0   { background: rgba(100,100,100,.2); color: var(--text3); }
+  .rank-100 { background: rgba(52,152,219,.2);  color: var(--blue); }
+  .rank-200 { background: rgba(243,156,18,.2);  color: var(--yellow); }
+  .rank-300 { background: rgba(232,64,64,.2);   color: var(--accent); }
+  .rank-900 { background: rgba(155,89,182,.2);  color: #9b59b6; }
+
+  /* COMMAND BAR */
+  .cmd-bar {
+    display: flex; gap: 8px;
+    margin-bottom: 16px;
+  }
+  .cmd-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--mono); font-size: 14px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .cmd-input:focus { border-color: var(--accent); }
+  .cmd-input::placeholder { color: var(--text3); }
+
+  /* LOG STREAM */
+  .log-stream {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    font-family: var(--mono); font-size: 12px;
+    height: 320px; overflow-y: auto;
+    display: flex; flex-direction: column-reverse;
+  }
+  .log-entry {
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,.03);
+    display: flex; gap: 12px;
+    animation: logIn .2s ease;
+  }
+  @keyframes logIn { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: translateX(0); } }
+  .log-time { color: var(--text3); flex-shrink: 0; }
+  .log-type { flex-shrink: 0; font-weight: 700; min-width: 60px; }
+  .log-type.join    { color: var(--green); }
+  .log-type.leave   { color: var(--text3); }
+  .log-type.kick    { color: var(--yellow); }
+  .log-type.ban     { color: var(--accent); }
+  .log-type.mute    { color: var(--blue); }
+  .log-type.announce{ color: #9b59b6; }
+  .log-type.cmd     { color: var(--accent2); }
+  .log-content { color: var(--text2); flex: 1; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 500;
+    opacity: 0; visibility: hidden;
+    transition: opacity .2s, visibility .2s;
+  }
+  .modal-overlay.open { opacity: 1; visibility: visible; }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 28px;
+    width: 440px; max-width: 90vw;
+    box-shadow: var(--shadow);
+    transform: scale(.95);
+    transition: transform .2s;
+  }
+  .modal-overlay.open .modal { transform: scale(1); }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+  /* TOAST */
+  #toastContainer {
+    position: fixed; bottom: 24px; right: 24px;
+    display: flex; flex-direction: column-reverse; gap: 8px;
+    z-index: 9999;
+  }
+  .toast {
+    padding: 12px 18px;
+    border-radius: var(--radius);
+    font-family: var(--mono); font-size: 13px;
+    border: 1px solid;
+    max-width: 360px;
+    animation: toastIn .3s cubic-bezier(.16,1,.3,1);
+    box-shadow: var(--shadow);
+  }
+  @keyframes toastIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+  .toast.success { background: rgba(46,204,113,.1);  color: var(--green);  border-color: rgba(46,204,113,.3); }
+  .toast.error   { background: rgba(232,64,64,.1);   color: var(--accent); border-color: rgba(232,64,64,.3); }
+  .toast.info    { background: rgba(52,152,219,.1);   color: var(--blue);   border-color: rgba(52,152,219,.3); }
+
+  /* FORM INLINE */
+  .inline-form {
+    display: flex; gap: 8px; align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .inline-form .form-group { margin-bottom: 0; flex: 1; min-width: 140px; }
+
+  /* ANNOUNCE BAR */
+  .announce-bar {
+    background: linear-gradient(135deg, rgba(232,64,64,.1), rgba(255,107,53,.08));
+    border: 1px solid rgba(232,64,64,.2);
+    border-radius: 8px; padding: 20px;
+    margin-bottom: 16px;
+  }
+  .announce-bar .title {
+    font-size: 13px; font-weight: 700; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+
+  /* RESPONSIVE QUICK ACTIONS */
+  .quick-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .quick-btn {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px; padding: 16px 8px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; cursor: pointer;
+    font-size: 13px; font-weight: 600; color: var(--text2);
+    transition: all .15s;
+    text-align: center;
+  }
+  .quick-btn:hover { border-color: var(--border2); color: var(--text); background: var(--bg3); }
+  .quick-btn .qicon { font-size: 24px; }
+
+  .owner-only { display: none; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  .empty {
+    text-align: center; padding: 40px;
+    color: var(--text3); font-family: var(--mono); font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════ LOGIN ══════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="brand">Web<span>Panel</span></div>
+      <div class="sub">Adonis Admin Interface</div>
+    </div>
+    <div class="form-group">
+      <label>Pseudo Roblox</label>
+      <input type="text" id="loginName" placeholder="VotrePseudo" autocomplete="username"/>
+    </div>
+    <div class="form-group">
+      <label>Mot de passe</label>
+      <input type="password" id="loginPass" placeholder="••••••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">Se connecter</button>
+    <div id="loginError"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ APP ══════════════════════════ -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="brand">Web<span>Panel</span></div>
+    <div class="sep"></div>
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Déconnecté</span>
+    <div class="user-pill">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <span id="userName">—</span>
+    </div>
+    <button class="logout-btn" onclick="doLogout()" title="Se déconnecter">✕</button>
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="main-layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-section">Navigation</div>
+      <button class="nav-item active" data-panel="dashboard" onclick="switchPanel(this)">
+        <span class="icon">📊</span> Dashboard
+      </button>
+      <button class="nav-item" data-panel="players" onclick="switchPanel(this)">
+        <span class="icon">👥</span> Joueurs
+        <span class="nav-badge" id="playerCount">0</span>
+      </button>
+      <button class="nav-item" data-panel="moderation" onclick="switchPanel(this)">
+        <span class="icon">🛡️</span> Modération
+      </button>
+      <button class="nav-item" data-panel="announce" onclick="switchPanel(this)">
+        <span class="icon">📢</span> Annonces
+      </button>
+      <button class="nav-item" data-panel="logs" onclick="switchPanel(this)">
+        <span class="icon">📋</span> Logs
+      </button>
+      <button class="nav-item owner-only" data-panel="users" onclick="switchPanel(this)">
+        <span class="icon">⚙️</span> Comptes
+      </button>
+      <button class="nav-item owner-only" data-panel="console" onclick="switchPanel(this)">
+        <span class="icon">💻</span> Console
+      </button>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- ── DASHBOARD ── -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="panel-title">Dashboard</div>
+        <div class="panel-sub">Vue d'ensemble du serveur en temps réel</div>
+
+        <div class="grid-4" style="margin-bottom:16px">
+          <div class="stat-card">
+            <div class="stat-label">En ligne</div>
+            <div class="stat-value green" id="stat-online">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Bans (session)</div>
+            <div class="stat-value accent" id="stat-bans">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Kicks (session)</div>
+            <div class="stat-value yellow" id="stat-kicks">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Commandes</div>
+            <div class="stat-value blue" id="stat-cmds">0</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">⚡ Actions rapides</div>
+            <div class="quick-grid">
+              <div class="quick-btn" onclick="openModal('kick')">
+                <span class="qicon">👢</span> Kick
+              </div>
+              <div class="quick-btn" onclick="openModal('ban')">
+                <span class="qicon">🔨</span> Ban
+              </div>
+              <div class="quick-btn" onclick="openModal('mute')">
+                <span class="qicon">🔇</span> Mute
+              </div>
+              <div class="quick-btn" onclick="openModal('announce')">
+                <span class="qicon">📢</span> Annonce
+              </div>
+              <div class="quick-btn owner-only" onclick="confirmShutdown()">
+                <span class="qicon">🔴</span> Shutdown
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">📋 Flux en direct</div>
+            <div class="log-stream" id="dashboardLog"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── JOUEURS ── -->
+      <div class="panel" id="panel-players">
+        <div class="panel-title">Joueurs en ligne</div>
+        <div class="panel-sub">Gérez les joueurs connectés au serveur</div>
+        <div class="card" style="padding:0; overflow:hidden">
+          <table class="player-table">
+            <thead>
+              <tr>
+                <th>Joueur</th>
+                <th>User ID</th>
+                <th>Rang</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="playerTableBody">
+              <tr><td colspan="4" class="empty">Aucun joueur en ligne</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── MODÉRATION ── -->
+      <div class="panel" id="panel-moderation">
+        <div class="panel-title">Modération</div>
+        <div class="panel-sub">Ban, kick, mute, gestion des rangs</div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">👢 Kick un joueur</div>
+            <div class="inline-form">
+              <div class="form-group">
+                <label>Joueur</label>
+                <input type="text" id="kickPlayer" class="cmd-input" placeholder="Pseudo ou UserId"/>
+              </div>
+              <div class="form-group">
+                <label>Raison (optionnel)</label>
+                <input type="text" id="kickReason" class="cmd-input" placeholder="Raison..."/>
+              </div>
+            </div>
+            <button class="btn btn-warn" style="margin-top:10px" onclick="doKick()">Kick</button>
+          </div>
+
+          <div class="card">
+            <div class="card-title">🔨 Bannir un joueur</div>
+            <div class="inline-form">
+              <div class="form-group">
+                <label>Joueur</label>
+                <input type="text" id="banPlayer" class="cmd-input" placeholder="Pseudo ou UserId"/>
+              </div>
+              <div class="form-group">
+                <label>Raison (optionnel)</label>
+                <input type="text" id="banReason" class="cmd-input" placeholder="Raison..."/>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button class="btn btn-danger" onclick="doBan()">Bannir</button>
+              <button class="btn btn-success" onclick="doUnban()">Débannir</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">🔇 Mute / Unmute</div>
+            <div class="form-group">
+              <label>Joueur</label>
+              <input type="text" id="mutePlayer" class="cmd-input" placeholder="Pseudo ou UserId"/>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button class="btn btn-info" onclick="doMute()">Muter</button>
+              <button class="btn btn-success" onclick="doUnmute()">Démuter</button>
+            </div>
+          </div>
+
+          <div class="card owner-only">
+            <div class="card-title">⭐ Changer le rang</div>
+            <div class="inline-form">
+              <div class="form-group">
+                <label>Joueur</label>
+                <input type="text" id="rankPlayer" class="cmd-input" placeholder="Pseudo"/>
+              </div>
+              <div class="form-group">
+                <label>Rang</label>
+                <select id="rankLevel" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 14px;color:var(--text);font-family:var(--mono);outline:none;">
+                  <option value="player">Player (0)</option>
+                  <option value="mod">Moderator (100)</option>
+                  <option value="admin">Admin (200)</option>
+                  <option value="headadmin">HeadAdmin (300)</option>
+                  <option value="creator">Creator (900)</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn btn-warn" style="margin-top:10px" onclick="doSetRank()">Appliquer</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ANNONCES ── -->
+      <div class="panel" id="panel-announce">
+        <div class="panel-title">Annonces</div>
+        <div class="panel-sub">Envoyez des messages au serveur Roblox</div>
+
+        <div class="announce-bar">
+          <div class="title">📢 Nouvelle annonce</div>
+          <textarea id="announceMsg" class="cmd-input" style="width:100%;min-height:80px;resize:vertical;padding:10px;font-family:var(--mono)" placeholder="Votre message ici..."></textarea>
+          <button class="btn btn-primary" style="margin-top:10px;width:auto" onclick="doAnnounce()">Envoyer l'annonce</button>
+        </div>
+
+        <div class="card owner-only">
+          <div class="card-title">🔴 Danger Zone</div>
+          <p style="color:var(--text2);font-size:13px;margin-bottom:16px">Actions irréversibles — à utiliser avec précaution.</p>
+          <div class="inline-form">
+            <div class="form-group">
+              <label>Raison du shutdown</label>
+              <input type="text" id="shutdownReason" class="cmd-input" placeholder="Maintenance, mise à jour..."/>
+            </div>
+            <button class="btn btn-danger" style="margin-top:20px" onclick="confirmShutdown()">⚠ Shutdown serveur</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LOGS ── -->
+      <div class="panel" id="panel-logs">
+        <div class="panel-title">Logs</div>
+        <div class="panel-sub">Historique des événements et commandes</div>
+
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="filterLogs('')" id="filter-all">Tous</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterLogs('join')" id="filter-join">Connexions</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterLogs('kick')" id="filter-kick">Kicks</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterLogs('ban')" id="filter-ban">Bans</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterLogs('announce')" id="filter-announce">Annonces</button>
+        </div>
+
+        <div class="card" style="padding:0">
+          <div class="log-stream" id="mainLog" style="height:500px"></div>
+        </div>
+      </div>
+
+      <!-- ── COMPTES (owner only) ── -->
+      <div class="panel" id="panel-users">
+        <div class="panel-title">Gestion des comptes</div>
+        <div class="panel-sub">Créez des comptes panel pour vos modérateurs</div>
+
+        <div class="card">
+          <div class="card-title">➕ Créer un compte</div>
+          <div class="inline-form">
+            <div class="form-group">
+              <label>Pseudo Roblox</label>
+              <input type="text" id="newUserName" class="cmd-input" placeholder="PseudoRoblox"/>
+            </div>
+            <div class="form-group">
+              <label>Rôle</label>
+              <select id="newUserRole" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 14px;color:var(--text);font-family:var(--mono);outline:none;">
+                <option value="moderator">Modérateur</option>
+                <option value="admin">Admin</option>
+                <option value="owner">Owner</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-success" style="margin-top:10px" onclick="createUser()">Créer le compte</button>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="player-table">
+            <thead>
+              <tr><th>Pseudo</th><th>Rôle</th><th>Créé le</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr><td colspan="4" class="empty">Chargement...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── CONSOLE (owner only) ── -->
+      <div class="panel" id="panel-console">
+        <div class="panel-title">Console RAW</div>
+        <div class="panel-sub">Exécutez n'importe quelle commande Adonis directement</div>
+
+        <div class="card">
+          <div class="card-title">💻 Commande brute</div>
+          <div class="cmd-bar">
+            <span style="font-family:var(--mono);color:var(--accent);padding:10px 0;font-size:16px">:</span>
+            <input type="text" id="rawCmd" class="cmd-input" placeholder="ff SomePlayer" onkeydown="if(event.key==='Enter')doRaw()"/>
+            <button class="btn btn-primary" onclick="doRaw()">Exécuter</button>
+          </div>
+          <div class="log-stream" id="consoleLog" style="height:400px"></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main-layout -->
+</div><!-- /app -->
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Action</div>
+    <div id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" id="modalConfirm">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div id="toastContainer"></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  CONFIG — Changez l'URL de votre backend !
+// ═══════════════════════════════════════════
+const API_BASE = 'http://localhost:3000';  // ← Mettez l'URL de votre serveur Node.js
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let authToken = localStorage.getItem('wp_token');
+let currentUser = null;
+let allLogs = [];
+let currentFilter = '';
+let ws = null;
+
+const stats = { bans: 0, kicks: 0, cmds: 0 };
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', async () => {
+  if (authToken) {
+    try {
+      const res = await apiFetch('/api/auth/me');
+      if (res.user) { initApp(res.user); return; }
+    } catch {}
+  }
+  showLogin();
+});
+
+// ═══════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════
+async function doLogin() {
+  const name = document.getElementById('loginName').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+
+  if (!name || !pass) { errEl.textContent = 'Remplissez tous les champs.'; return; }
+
+  try {
+    const res = await apiFetch('/api/auth/login', 'POST', { robloxName: name, password: pass });
+    authToken = res.token;
+    localStorage.setItem('wp_token', authToken);
+    initApp(res.user);
+  } catch (err) {
+    errEl.textContent = err.message || 'Erreur de connexion';
+  }
+}
+
+document.getElementById('loginPass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+function doLogout() {
+  localStorage.removeItem('wp_token');
+  authToken = null; currentUser = null;
+  if (ws) { ws.close(); ws = null; }
+  document.getElementById('app').classList.remove('visible');
+  showLogin();
+}
+
+function showLogin() {
+  document.getElementById('loginScreen').classList.remove('hidden');
+}
+
+function initApp(user) {
+  currentUser = user;
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('userName').textContent = user.robloxName;
+  document.getElementById('userAvatar').textContent = user.robloxName[0].toUpperCase();
+
+  // Afficher les éléments owner-only
+  if (user.role === 'owner') {
+    document.querySelectorAll('.owner-only').forEach(el => el.style.display = '');
+  }
+
+  connectWS();
+  loadInitialData();
+}
+
+// ═══════════════════════════════════════════
+//  WEBSOCKET
+// ═══════════════════════════════════════════
+function connectWS() {
+  const wsUrl = API_BASE.replace('http', 'ws') + `?token=${authToken}`;
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    setStatus(true);
+  };
+  ws.onclose = () => {
+    setStatus(false);
+    setTimeout(connectWS, 5000);
+  };
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'log') { addLogEntry(msg.data); }
+      if (msg.type === 'players') { updatePlayers(msg.data); }
+      if (msg.type === 'init') {
+        updatePlayers(msg.data.players || []);
+        (msg.data.logs || []).forEach(addLogEntry);
+      }
+    } catch {}
+  };
+  ws.onerror = () => setStatus(false);
+}
+
+function setStatus(connected) {
+  document.getElementById('statusDot').className = 'status-dot' + (connected ? ' connected' : '');
+  document.getElementById('statusText').textContent = connected ? 'Connecté' : 'Reconnexion...';
+}
+
+// ═══════════════════════════════════════════
+//  API HELPER
+// ═══════════════════════════════════════════
+async function apiFetch(path, method = 'GET', body = null) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (authToken) opts.headers['Authorization'] = 'Bearer ' + authToken;
+  if (body) opts.body = JSON.stringify(body);
+
+  const res = await fetch(API_BASE + path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erreur serveur');
+  return data;
+}
+
+// ═══════════════════════════════════════════
+//  DATA LOADING
+// ═══════════════════════════════════════════
+async function loadInitialData() {
+  try {
+    const players = await apiFetch('/api/roblox/players');
+    updatePlayers(players);
+  } catch {}
+
+  try {
+    const logs = await apiFetch('/api/logs');
+    logs.forEach(addLogEntry);
+  } catch {}
+
+  if (currentUser?.role === 'owner') {
+    loadUsers();
+  }
+}
+
+// ═══════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════
+function switchPanel(btn) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
+
+  if (btn.dataset.panel === 'users') loadUsers();
+}
+
+// ═══════════════════════════════════════════
+//  PLAYERS
+// ═══════════════════════════════════════════
+function updatePlayers(players) {
+  document.getElementById('playerCount').textContent = players.length;
+  document.getElementById('stat-online').textContent = players.length;
+
+  const body = document.getElementById('playerTableBody');
+  if (!players.length) {
+    body.innerHTML = '<tr><td colspan="4" class="empty">Aucun joueur en ligne</td></tr>';
+    return;
+  }
+
+  const rankLabels = { 0: 'Player', 100: 'Mod', 200: 'Admin', 300: 'HeadAdmin', 900: 'Creator' };
+  body.innerHTML = players.map(p => {
+    const rankLabel = rankLabels[p.adminLevel] || `Lvl ${p.adminLevel}`;
+    return `
+    <tr>
+      <td><b>${esc(p.name)}</b></td>
+      <td style="color:var(--text3)">${p.userId}</td>
+      <td><span class="rank-badge rank-${p.adminLevel}">${rankLabel}</span></td>
+      <td>
+        <div class="player-actions">
+          <button class="btn btn-sm btn-warn"  onclick="quickKick('${esc(p.name)}')">Kick</button>
+          <button class="btn btn-sm btn-danger" onclick="quickBan('${esc(p.name)}')">Ban</button>
+          <button class="btn btn-sm btn-info"   onclick="quickMute('${esc(p.name)}')">Mute</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function quickKick(name) {
+  document.getElementById('kickPlayer').value = name;
+  switchPanelByName('moderation');
+}
+function quickBan(name) {
+  document.getElementById('banPlayer').value = name;
+  switchPanelByName('moderation');
+}
+function quickMute(name) {
+  document.getElementById('mutePlayer').value = name;
+  switchPanelByName('moderation');
+}
+function switchPanelByName(name) {
+  document.querySelector(`[data-panel="${name}"]`).click();
+}
+
+// ═══════════════════════════════════════════
+//  COMMANDS
+// ═══════════════════════════════════════════
+async function doKick() {
+  const player = document.getElementById('kickPlayer').value.trim();
+  const reason = document.getElementById('kickReason').value.trim();
+  if (!player) return toast('Entrez un pseudo', 'error');
+  const r = await apiCmd('/api/roblox/kick', { player, reason });
+  if (r.success) { stats.kicks++; document.getElementById('stat-kicks').textContent = stats.kicks; }
+}
+
+async function doBan() {
+  const player = document.getElementById('banPlayer').value.trim();
+  const reason = document.getElementById('banReason').value.trim();
+  if (!player) return toast('Entrez un pseudo', 'error');
+  const r = await apiCmd('/api/roblox/ban', { player, reason });
+  if (r.success) { stats.bans++; document.getElementById('stat-bans').textContent = stats.bans; }
+}
+
+async function doUnban() {
+  const player = document.getElementById('banPlayer').value.trim();
+  if (!player) return toast('Entrez un pseudo', 'error');
+  await apiCmd('/api/roblox/unban', { player });
+}
+
+async function doMute() {
+  const player = document.getElementById('mutePlayer').value.trim();
+  if (!player) return toast('Entrez un pseudo', 'error');
+  await apiCmd('/api/roblox/mute', { player });
+}
+
+async function doUnmute() {
+  const player = document.getElementById('mutePlayer').value.trim();
+  if (!player) return toast('Entrez un pseudo', 'error');
+  await apiCmd('/api/roblox/unmute', { player });
+}
+
+async function doSetRank() {
+  const player = document.getElementById('rankPlayer').value.trim();
+  const rank   = document.getElementById('rankLevel').value;
+  if (!player) return toast('Entrez un pseudo', 'error');
+  await apiCmd('/api/roblox/setrank', { player, rank });
+}
+
+async function doAnnounce() {
+  const message = document.getElementById('announceMsg').value.trim();
+  if (!message) return toast('Écrivez un message', 'error');
+  const r = await apiCmd('/api/roblox/announce', { message });
+  if (r.success) document.getElementById('announceMsg').value = '';
+}
+
+function confirmShutdown() {
+  openModal('shutdown');
+}
+
+async function doRaw() {
+  const full = document.getElementById('rawCmd').value.trim();
+  if (!full) return;
+  const parts = full.split(' ');
+  const command = parts[0];
+  const args = parts.slice(1);
+  const r = await apiFetch('/api/roblox/raw', 'POST', { command, args });
+  appendConsoleLog(`> :${full}`, r.success ? 'success' : 'error');
+  appendConsoleLog(typeof r.result === 'string' ? r.result : JSON.stringify(r.result), r.success ? 'success' : 'error');
+  if (r.success) document.getElementById('rawCmd').value = '';
+  stats.cmds++;
+  document.getElementById('stat-cmds').textContent = stats.cmds;
+}
+
+async function apiCmd(path, body) {
+  try {
+    const r = await apiFetch(path, 'POST', body);
+    toast(typeof r.result === 'string' ? r.result : 'Commande exécutée !', r.success ? 'success' : 'error');
+    stats.cmds++;
+    document.getElementById('stat-cmds').textContent = stats.cmds;
+    return r;
+  } catch (err) {
+    toast(err.message, 'error');
+    return { success: false };
+  }
+}
+
+// ═══════════════════════════════════════════
+//  MODAL
+// ═══════════════════════════════════════════
+const modalConfigs = {
+  kick: {
+    title: '👢 Kick un joueur',
+    body: `<div class="form-group"><label>Joueur</label><input id="m-player" class="cmd-input" style="width:100%" placeholder="Pseudo"/></div>
+           <div class="form-group" style="margin-top:10px"><label>Raison</label><input id="m-reason" class="cmd-input" style="width:100%" placeholder="Raison..."/></div>`,
+    action: () => {
+      const p = document.getElementById('m-player').value.trim();
+      const r = document.getElementById('m-reason').value.trim();
+      if (p) apiCmd('/api/roblox/kick', { player: p, reason: r });
+      closeModal();
+    }
+  },
+  ban: {
+    title: '🔨 Bannir un joueur',
+    body: `<div class="form-group"><label>Joueur</label><input id="m-player" class="cmd-input" style="width:100%" placeholder="Pseudo ou UserId"/></div>
+           <div class="form-group" style="margin-top:10px"><label>Raison</label><input id="m-reason" class="cmd-input" style="width:100%" placeholder="Raison..."/></div>`,
+    action: () => {
+      const p = document.getElementById('m-player').value.trim();
+      const r = document.getElementById('m-reason').value.trim();
+      if (p) apiCmd('/api/roblox/ban', { player: p, reason: r });
+      closeModal();
+    }
+  },
+  mute: {
+    title: '🔇 Muter un joueur',
+    body: `<div class="form-group"><label>Joueur</label><input id="m-player" class="cmd-input" style="width:100%" placeholder="Pseudo"/></div>`,
+    action: () => {
+      const p = document.getElementById('m-player').value.trim();
+      if (p) apiCmd('/api/roblox/mute', { player: p });
+      closeModal();
+    }
+  },
+  announce: {
+    title: '📢 Envoyer une annonce',
+    body: `<div class="form-group"><label>Message</label><textarea id="m-msg" class="cmd-input" style="width:100%;min-height:80px;resize:vertical" placeholder="Votre message..."></textarea></div>`,
+    action: () => {
+      const m = document.getElementById('m-msg').value.trim();
+      if (m) apiCmd('/api/roblox/announce', { message: m });
+      closeModal();
+    }
+  },
+  shutdown: {
+    title: '⚠️ Confirmer le shutdown',
+    body: `<p style="color:var(--text2);margin-bottom:16px">Tous les joueurs seront déconnectés. Cette action est irréversible.</p>
+           <div class="form-group"><label>Raison</label><input id="m-reason" class="cmd-input" style="width:100%" placeholder="Maintenance..."/></div>`,
+    action: () => {
+      const r = document.getElementById('m-reason')?.value.trim();
+      apiCmd('/api/roblox/shutdown', { reason: r });
+      closeModal();
+    }
+  }
+};
+
+function openModal(type) {
+  const cfg = modalConfigs[type];
+  if (!cfg) return;
+  document.getElementById('modalTitle').textContent = cfg.title;
+  document.getElementById('modalBody').innerHTML = cfg.body;
+  document.getElementById('modalConfirm').onclick = cfg.action;
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(() => {
+    const first = document.querySelector('#modalBody input, #modalBody textarea');
+    if (first) first.focus();
+  }, 100);
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modalOverlay')) return;
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════
+//  LOGS
+// ═══════════════════════════════════════════
+function addLogEntry(log) {
+  allLogs.unshift(log);
+  if (allLogs.length > 500) allLogs.pop();
+  renderLogs();
+  appendDashboardLog(log);
+}
+
+function renderLogs() {
+  const filtered = currentFilter ? allLogs.filter(l => l.type === currentFilter) : allLogs;
+  const el = document.getElementById('mainLog');
+  el.innerHTML = filtered.slice(0, 200).map(formatLogHTML).join('');
+}
+
+function appendDashboardLog(log) {
+  const el = document.getElementById('dashboardLog');
+  const div = document.createElement('div');
+  div.innerHTML = formatLogHTML(log);
+  el.prepend(div.firstElementChild);
+  if (el.children.length > 50) el.lastChild.remove();
+}
+
+function appendConsoleLog(msg, type = 'info') {
+  const el = document.getElementById('consoleLog');
+  const colors = { success: 'var(--green)', error: 'var(--accent)', info: 'var(--text2)' };
+  const div = document.createElement('div');
+  div.className = 'log-entry';
+  div.innerHTML = `<span class="log-time">${timeStr()}</span><span style="color:${colors[type]};font-family:var(--mono);font-size:12px">${esc(msg)}</span>`;
+  el.prepend(div);
+}
+
+function formatLogHTML(log) {
+  const type = (log.type || 'cmd').toLowerCase();
+  let content = '';
+
+  if (typeof log.content === 'object' && log.content) {
+    const c = log.content;
+    if (c.player)  content = `${c.player}${c.userId ? ' (' + c.userId + ')' : ''}`;
+    if (c.target)  content = `${c.target}${c.reason ? ' — ' + c.reason : ''}${c.by ? ' (par ' + c.by + ')' : ''}`;
+    if (c.message) content = c.message + (c.by ? ` (par ${c.by})` : '');
+    if (!content)  content = JSON.stringify(c);
+  } else if (log.content) {
+    content = String(log.content);
+  } else {
+    content = JSON.stringify(log);
+  }
+
+  const ts = log.timestamp ? new Date(log.timestamp * 1000).toLocaleTimeString() : timeStr();
+  return `<div class="log-entry">
+    <span class="log-time">${ts}</span>
+    <span class="log-type ${type}">${type.toUpperCase()}</span>
+    <span class="log-content">${esc(content)}</span>
+  </div>`;
+}
+
+function filterLogs(type) {
+  currentFilter = type;
+  renderLogs();
+}
+
+// ═══════════════════════════════════════════
+//  USERS MANAGEMENT (owner)
+// ═══════════════════════════════════════════
+async function loadUsers() {
+  try {
+    const users = await apiFetch('/api/admin/users');
+    const body = document.getElementById('usersTableBody');
+    if (!users.length) {
+      body.innerHTML = '<tr><td colspan="4" class="empty">Aucun compte</td></tr>';
+      return;
+    }
+    body.innerHTML = users.map(u => `
+    <tr>
+      <td><b>${esc(u.robloxName)}</b></td>
+      <td><span class="rank-badge rank-${u.role === 'owner' ? 900 : u.role === 'admin' ? 200 : 100}">${u.role}</span></td>
+      <td style="color:var(--text3);font-family:var(--mono);font-size:12px">${new Date(u.createdAt).toLocaleDateString()}</td>
+      <td>
+        <div class="player-actions">
+          <button class="btn btn-sm btn-warn" onclick="resetPwd('${u.id}', '${esc(u.robloxName)}')">Reset MDP</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}', '${esc(u.robloxName)}')">Supprimer</button>
+        </div>
+      </td>
+    </tr>`).join('');
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+async function createUser() {
+  const robloxName = document.getElementById('newUserName').value.trim();
+  const role       = document.getElementById('newUserRole').value;
+  if (!robloxName) return toast('Entrez un pseudo Roblox', 'error');
+  try {
+    const r = await apiFetch('/api/admin/users', 'POST', { robloxName, role });
+    toast(`Compte créé ! MDP: ${r.password}`, 'success');
+    document.getElementById('newUserName').value = '';
+    loadUsers();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+async function resetPwd(id, name) {
+  if (!confirm(`Réinitialiser le mot de passe de ${name} ?`)) return;
+  try {
+    const r = await apiFetch(`/api/admin/users/${id}/reset-password`, 'POST');
+    toast(`Nouveau MDP de ${name}: ${r.password}`, 'info');
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+async function deleteUser(id, name) {
+  if (!confirm(`Supprimer le compte de ${name} ?`)) return;
+  try {
+    await apiFetch(`/api/admin/users/${id}`, 'DELETE');
+    toast(`Compte ${name} supprimé`, 'success');
+    loadUsers();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+function timeStr() {
+  return new Date().toLocaleTimeString();
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
