@@ -29,7 +29,7 @@ const crypto     = require('crypto');
 
 const app    = express();
 const server = http.createServer(app);
-const wss    = new WebSocketServer({ server });
+const wss    = new WebSocketServer({ server, path: '/ws' });
 
 // ════════════════════════════════════════
 //  CONFIGURATION
